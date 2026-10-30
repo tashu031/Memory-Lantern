@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #08070F;
+    color: #F5EFE6;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0D0B18;
+}
+::-webkit-scrollbar-thumb {
+  background: #382E25;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D97706;
+}
+
+/* Glassmorphism & Glow Utilities */
+.glass-panel {
+  background: rgba(18, 15, 28, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 158, 11, 0.16);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 10px 30px -10px rgba(245, 158, 11, 0.15), 0 0 20px 0 rgba(234, 88, 12, 0.08);
+}
+
+.candle-glow {
+  box-shadow: 0 0 25px 4px rgba(245, 158, 11, 0.4), 0 0 50px 10px rgba(234, 88, 12, 0.2);
+}
+
+.lantern-glow-ambient {
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.18) 0%, rgba(234, 88, 12, 0.08) 45%, rgba(9, 8, 18, 0) 70%);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FDE68A 30%, #F59E0B 70%, #D97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.marigold-gradient-text {
+  background: linear-gradient(135deg, #FEF08A 0%, #FB923C 50%, #EA580C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Keyframe animations */
+@keyframes flame-flicker {
+  0%, 100% {
+    transform: scale(1) rotate(-0.5deg);
+    opacity: 0.95;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.8));
+  }
+  25% {
+    transform: scale(1.05, 0.97) rotate(1deg);
+    opacity: 1;
+    filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.95));
+  }
+  50% {
+    transform: scale(0.96, 1.04) rotate(-1deg);
+    opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(234, 88, 12, 0.8));
+  }
+  75% {
+    transform: scale(1.02, 0.98) rotate(0.8deg);
+    opacity: 0.98;
+    filter: drop-shadow(0 0 14px rgba(251, 191, 36, 0.9));
+  }
+}
+
+@keyframes gentle-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes ember-rise {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120px) translateX(25px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes aura-pulse {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.08);
+  }
+}
+
+.animate-flicker {
+  animation: flame-flicker 2.5s infinite ease-in-out;
+}
+
+.animate-float {
+  animation: gentle-float 6s infinite ease-in-out;
+}
+
+.animate-pulse-aura {
+  animation: aura-pulse 4s infinite ease-in-out;
+}
