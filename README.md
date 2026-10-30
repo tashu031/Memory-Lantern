@@ -83,7 +83,7 @@ Modern digital memorials are frequently plagued by two deep flaws:
 - **Server:** Uvicorn ASGI
 
 ### AI Engine
-- **Model:** Google Gemma Open-Weights (`gemma3:1b` default, with automatic support for `gemma2:2b`)
+- **Model:** Google Gemma Open-Weights (`gemma2:2b` default, with configurable support for `gemma3:1b`)
 - **Runtime:** Ollama Local Inference API (`/api/chat`)
 
 ### Storage
@@ -140,9 +140,9 @@ ollama serve
 
 2. Pull the Gemma model:
 ```bash
-ollama pull gemma3:1b
+ollama pull gemma2:2b
 ```
-*(Or pull `gemma2:2b` if using 2B weights: `ollama pull gemma2:2b`)*
+*(Or pull `gemma3:1b` if using 1B weights: `ollama pull gemma3:1b`)*
 
 ---
 
@@ -174,7 +174,7 @@ pip install -r requirements.txt
 HOST=0.0.0.0
 PORT=8000
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=gemma3:1b
+OLLAMA_MODEL=gemma2:2b
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
@@ -236,10 +236,10 @@ Checks backend health and live Ollama connectivity.
   "status": "ok",
   "ollama_connected": true,
   "ollama_url": "http://localhost:11434",
-  "active_model": "gemma3:1b",
-  "installed_models": ["gemma2:2b", "gemma3:1b"],
+  "active_model": "gemma2:2b",
+  "installed_models": ["llama3.2:1b", "gemma2:2b"],
   "model_ready": true,
-  "message": "Ollama is connected and 'gemma3:1b' is ready."
+  "message": "Ollama is connected and 'gemma2:2b' is ready."
 }
 ```
 
@@ -261,14 +261,14 @@ Generates an emotionally grounded remembrance tribute.
   "date_or_occasion": "Día de los Muertos",
   "style": "Heartfelt",
   "tribute_type": "letter",
-  "model": "gemma3:1b"
+  "model": "gemma2:2b"
 }
 ```
 - **Response:**
 ```json
 {
   "tribute": "Dear Grandmother Elena,\n\nEvery time the autumn breeze carries the sweet scent of cinnamon...",
-  "model": "gemma3:1b",
+  "model": "gemma2:2b",
   "tribute_type": "letter",
   "style": "Heartfelt",
   "name": "Grandmother Elena"
