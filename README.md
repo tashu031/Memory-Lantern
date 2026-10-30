@@ -23,12 +23,17 @@
   - [1. Ollama & Gemma Setup](#1-ollama--gemma-setup)
   - [2. Backend Setup (FastAPI)](#2-backend-setup-fastapi)
   - [3. Frontend Setup (React + Vite)](#3-frontend-setup-react--vite)
-- [8. Running the Complete Application](#8-running-the-complete-application)
-- [9. API Endpoints](#9-api-endpoints)
-- [10. Why Open-Source AI Matters](#10-why-open-source-ai-matters)
-- [11. Privacy & Security Considerations](#11-privacy--security-considerations)
-- [12. Future Improvements](#12-future-improvements)
-- [13. License](#13-license)
+- [8. Running the Complete Application Locally](#8-running-the-complete-application-locally)
+- [9. Production Deployment Guide (Render)](#9-production-deployment-guide-render)
+  - [Architecture on Render](#architecture-on-render)
+  - [Connecting Hosted Backend to a Hosted Ollama Instance](#connecting-hosted-backend-to-a-hosted-ollama-instance)
+  - [Option A: Automated Blueprint Deployment (render.yaml)](#option-a-automated-blueprint-deployment-renderyaml)
+  - [Option B: Manual Service Setup on Render](#option-b-manual-service-setup-on-render)
+- [10. API Endpoints](#10-api-endpoints)
+- [11. Why Open-Source AI Matters](#11-why-open-source-ai-matters)
+- [12. Privacy & Security Considerations](#12-privacy--security-considerations)
+- [13. Future Improvements](#13-future-improvements)
+- [14. License](#14-license)
 
 ---
 
@@ -214,9 +219,9 @@ http://localhost:5173/
 
 ---
 
-## 8. Running the Complete Application
+## 8. Running the Complete Application Locally
 
-To run the full stack simultaneously:
+To run the full stack simultaneously on your local machine:
 
 | Service | Command | URL |
 | :--- | :--- | :--- |
@@ -226,7 +231,114 @@ To run the full stack simultaneously:
 
 ---
 
-## 9. API Endpoints
+## 9. Production Deployment Guide (Render)
+
+Memory Lantern is designed to deploy cleanly to [Render](https://render.com/) using a two-service architecture:
+1. **Frontend**: Render Static Site (React + Vite).
+2. **Backend**: Render Web Service (FastAPI + Python).
+
+```mermaid
+graph LR
+    Browser([User Browser]) -->|HTTPS| Frontend[Render Static Site\nReact + Vite]
+    Browser -->|API Requests\nVITE_API_URL| Backend[Render Web Service\nFastAPI on 0.0.0.0:$PORT]
+    Backend -->|OLLAMA_BASE_URL\nPrivate Network or HTTPS| OllamaCloud[Hosted Ollama Instance\nGPU/CPU Server with Gemma]
+```
+
+### Architecture on Render
+
+- **Frontend Static Site**: Serves compiled HTML, CSS, and JS from `./frontend/dist`.
+- **SPA Routing Support**: The file [`frontend/public/_redirects`](./frontend/public/_redirects) (`/* /index.html 200`) is automatically included in the build output so that direct page refreshes on `/garden`, `/tribute`, `/ofrenda`, and `/about` resolve cleanly without 404 errors.
+- **Dynamic API Target**: Configured via the `VITE_API_URL` environment variable. In local development it defaults to `/api` (using Vite proxy); in production it points directly to your deployed FastAPI backend URL.
+- **Backend Web Service**: Listens on `0.0.0.0` and Render's dynamic `$PORT`.
+- **CORS Support**: FastAPI automatically permits requests from `https://*.onrender.com` subdomains and any origins configured in `CORS_ORIGINS`.
+
+---
+
+### Connecting Hosted Backend to a Hosted Ollama Instance
+
+> [!IMPORTANT]
+> **Understanding "localhost" in Cloud Containers:**
+> When your FastAPI backend runs on Render, `localhost` (or `127.0.0.1`) refers **strictly to the isolated Render container itself**, NOT to your personal development computer. Your local Ollama running on your laptop will not be accessible to Render unless exposed over the internet.
+
+For production, connect your hosted backend to a hosted Ollama instance using one of the following methods:
+
+#### Method 1: Self-Hosted Ollama on a Cloud VM or GPU Instance (Recommended for Gemma)
+1. Deploy Ollama on a GPU/CPU server (e.g., RunPod, Modal, DigitalOcean, Hetzner, AWS EC2, or a private server).
+2. Start Ollama with open host binding:
+   ```bash
+   OLLAMA_HOST=0.0.0.0:11434 ollama serve
+   ```
+3. Pull the model on that host:
+   ```bash
+   ollama pull gemma2:2b
+   ```
+4. Set the backend environment variable on Render:
+   ```env
+   OLLAMA_BASE_URL=https://your-ollama-instance.example.com
+   ```
+
+#### Method 2: Render Private Service with Docker
+1. Create a Docker-based Private Service on Render using the official `ollama/ollama` image.
+2. Render creates an internal private service URL (e.g., `http://ollama-service:11434`).
+3. Set the backend environment variable:
+   ```env
+   OLLAMA_BASE_URL=http://ollama-service:11434
+   ```
+
+---
+
+### Option A: Automated Blueprint Deployment (`render.yaml`)
+
+This repository includes a [`render.yaml`](./render.yaml) blueprint specification:
+1. Push this repository to your GitHub account.
+2. In the [Render Dashboard](https://dashboard.render.com/), click **New** → **Blueprint**.
+3. Select your `Memory-Lantern` repository.
+4. Render will detect `render.yaml` and configure both services automatically:
+   - `memory-lantern-backend` (Web Service)
+   - `memory-lantern-frontend` (Static Site)
+5. Fill in the required environment variables:
+   - On the backend service: set `OLLAMA_BASE_URL` to your hosted Ollama address.
+   - On the frontend service: set `VITE_API_URL` to your backend's `.onrender.com` URL.
+
+---
+
+### Option B: Manual Service Setup on Render
+
+#### Step 1: Deploy Backend Web Service
+1. In Render Dashboard, click **New** → **Web Service** → Select your repository.
+2. Set configuration:
+   - **Name**: `memory-lantern-backend`
+   - **Root Directory**: Leave blank (repo root)
+   - **Runtime**: `Python`
+   - **Build Command**: `pip install -r backend/requirements.txt`
+   - **Start Command**: `uvicorn main:app --app-dir backend --host 0.0.0.0 --port $PORT`
+   - **Health Check Path**: `/health`
+3. Add Environment Variables:
+   | Key | Value | Description |
+   | :--- | :--- | :--- |
+   | `PYTHON_VERSION` | `3.11.9` | Recommended Python version |
+   | `OLLAMA_BASE_URL` | *(Your hosted Ollama URL)* | e.g. `https://ollama.yourdomain.com` |
+   | `OLLAMA_MODEL` | `gemma2:2b` | Gemma open-weight model |
+   | `CORS_ORIGINS` | `https://*.onrender.com,http://localhost:5173` | Allowed frontend domains |
+4. Click **Deploy Web Service** and copy your backend URL (e.g. `https://memory-lantern-backend.onrender.com`).
+
+#### Step 2: Deploy Frontend Static Site
+1. In Render Dashboard, click **New** → **Static Site** → Select your repository.
+2. Set configuration:
+   - **Name**: `memory-lantern-frontend`
+   - **Root Directory**: Leave blank (repo root)
+   - **Build Command**: `cd frontend && npm install && npm run build`
+   - **Publish Directory**: `frontend/dist`
+3. Add Environment Variable:
+   | Key | Value | Description |
+   | :--- | :--- | :--- |
+   | `VITE_API_URL` | `https://memory-lantern-backend.onrender.com` | Deployed backend URL |
+4. Click **Deploy Static Site**.
+5. Once built, open your `.onrender.com` frontend URL.
+
+---
+
+## 10. API Endpoints
 
 ### `GET /api/health`
 Checks backend health and live Ollama connectivity.
@@ -277,7 +389,7 @@ Generates an emotionally grounded remembrance tribute.
 
 ---
 
-## 10. Why Open-Source AI Matters
+## 11. Why Open-Source AI Matters
 
 In bereavement and remembrance, technology must be held to the highest standard of ethics:
 
@@ -287,7 +399,7 @@ In bereavement and remembrance, technology must be held to the highest standard 
 
 ---
 
-## 11. Privacy & Security Considerations
+## 12. Privacy & Security Considerations
 
 - **Client-Side Storage:** All memory entries, lit-candle flags, and saved tributes are saved in the user's browser `LocalStorage`.
 - **Zero Third-Party Telemetry:** No analytics, tracking pixels, or third-party cookies are used.
@@ -295,7 +407,7 @@ In bereavement and remembrance, technology must be held to the highest standard 
 
 ---
 
-## 12. Future Improvements
+## 13. Future Improvements
 
 - [ ] Export full garden memory book as a beautifully formatted PDF keepsake.
 - [ ] Photo upload support stored locally as Base64/IndexedDB for offline altar portraits.
@@ -304,7 +416,7 @@ In bereavement and remembrance, technology must be held to the highest standard 
 
 ---
 
-## 13. License
+## 14. License
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for more information.
 

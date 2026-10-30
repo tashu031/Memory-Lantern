@@ -4,6 +4,19 @@ from main import app
 
 client = TestClient(app)
 
+def test_root_and_render_health():
+    # Root check
+    r_root = client.get("/")
+    assert r_root.status_code == 200
+    assert r_root.json().get("status") == "healthy"
+    print("Root endpoint test passed (/)!")
+
+    # Render health check
+    r_health = client.get("/health")
+    assert r_health.status_code == 200
+    assert r_health.json().get("status") == "ok"
+    print("Render production health check passed (/health)!")
+
 def test_health():
     res = client.get("/api/health")
     print("Health check response code:", res.status_code)
@@ -36,6 +49,7 @@ def test_generate_tribute_validation():
     print("Validation error handling test passed (422)!")
 
 if __name__ == "__main__":
+    test_root_and_render_health()
     test_health()
     test_models()
     test_generate_tribute_validation()

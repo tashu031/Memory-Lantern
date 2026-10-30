@@ -20,14 +20,33 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS
+# Configure CORS (Supports custom domains, Render subdomains, and localhost)
+is_wildcard = "*" in CORS_ORIGINS or CORS_ORIGINS_RAW.strip() == "*"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS or ["*"],
-    allow_credentials=True,
+    allow_origins=["*"] if is_wildcard else CORS_ORIGINS,
+    allow_origin_regex=None if is_wildcard else r"https://.*\.onrender\.com",
+    allow_credentials=not is_wildcard,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+async def root():
+    return {
+        "name": "Memory Lantern API",
+        "status": "healthy",
+        "service": "FastAPI",
+        "docs": "/docs",
+        "health": "/api/health",
+    }
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 
 class TributeRequest(BaseModel):
@@ -304,7 +323,7 @@ async def generate_tribute(req: TributeRequest):
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
                 f"Cannot connect to Ollama at {OLLAMA_BASE_URL}. "
-                "Please make sure Ollama is installed and running locally with `ollama serve`."
+                "Please make sure the Ollama service is running and accessible via OLLAMA_BASE_URL."
             ),
         )
     except httpx.TimeoutException:
@@ -319,3 +338,11 @@ async def generate_tribute(req: TributeRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Unexpected error while communicating with AI service: {str(exc)}",
         )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    # Render sets the PORT environment variable automatically
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("main:app", host=host, port=port, reload=False)
