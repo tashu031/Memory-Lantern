@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, CheckCircle2, AlertTriangle, XCircle, RefreshCw, Terminal, Cpu } from 'lucide-react';
-import { checkBackendHealth } from '../services/api';
+import { checkBackendHealth, API_BASE } from '../services/api';
 
 export default function ModelStatusBadge({ onModelSelect, selectedModel }) {
   const [health, setHealth] = useState(null);
@@ -102,7 +102,9 @@ export default function ModelStatusBadge({ onModelSelect, selectedModel }) {
                   )}
                   <div>
                     <div className="font-medium text-stone-200">FastAPI Backend</div>
-                    <div className="text-xs text-stone-400">http://127.0.0.1:8000</div>
+                    <div className="text-xs text-stone-400 font-mono truncate max-w-[220px]">
+                      {API_BASE.startsWith('/') ? (typeof window !== 'undefined' ? window.location.origin + API_BASE : API_BASE) : API_BASE}
+                    </div>
                   </div>
                 </div>
                 <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">
@@ -118,8 +120,10 @@ export default function ModelStatusBadge({ onModelSelect, selectedModel }) {
                     <XCircle className="w-5 h-5 text-rose-400" />
                   )}
                   <div>
-                    <div className="font-medium text-stone-200">Ollama Local API</div>
-                    <div className="text-xs text-stone-400">{health?.ollama_url || 'http://localhost:11434'}</div>
+                    <div className="font-medium text-stone-200">Ollama AI Runtime</div>
+                    <div className="text-xs text-stone-400 font-mono truncate max-w-[220px]">
+                      {health?.ollama_url || 'Configured Ollama instance'}
+                    </div>
                   </div>
                 </div>
                 <span className={`text-xs font-mono px-2 py-1 rounded ${isConnected ? 'text-emerald-400 bg-emerald-500/10' : 'text-rose-400 bg-rose-500/10'}`}>

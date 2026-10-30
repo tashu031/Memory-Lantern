@@ -1,12 +1,24 @@
-// API Service for communicating with FastAPI backend & Ollama
+// Centralized API Service for communicating with FastAPI backend & Ollama
 
-const API_BASE = "/api";
+// Determine API base URL:
+// 1. In production, VITE_API_URL can be set (e.g. 'https://memory-lantern-backend.onrender.com')
+// 2. In local development or when VITE_API_URL is unset, defaults to '/api' which uses the Vite proxy
+function resolveApiBase() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl || !envUrl.trim()) {
+    return '/api';
+  }
+  const cleanUrl = envUrl.trim().replace(/\/+$/, '');
+  return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+}
+
+export const API_BASE = resolveApiBase();
 
 export async function checkBackendHealth() {
   try {
     const res = await fetch(`${API_BASE}/health`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) {
       throw new Error(`Backend returned status ${res.status}`);
@@ -14,13 +26,13 @@ export async function checkBackendHealth() {
     return await res.json();
   } catch (err) {
     return {
-      status: "unreachable",
+      status: 'unreachable',
       ollama_connected: false,
-      ollama_url: "http://localhost:11434",
-      active_model: "gemma3:1b",
+      ollama_url: 'remote/local instance',
+      active_model: 'gemma2:2b',
       installed_models: [],
       model_ready: false,
-      message: "FastAPI backend server is not responding at port 8000. Please start the backend.",
+      message: `FastAPI backend server is not responding at ${API_BASE}. Please ensure the backend service is running.`,
     };
   }
 }
@@ -34,16 +46,16 @@ export async function getAvailableModels() {
     }
     return await res.json();
   } catch (err) {
-    console.warn("Could not retrieve models list:", err);
-    return { models: [], default: "gemma3:1b" };
+    console.warn('Could not retrieve models list:', err);
+    return { models: [], default: 'gemma2:2b' };
   }
 }
 
 export async function generateAITribute(payload) {
   const response = await fetch(`${API_BASE}/generate-tribute`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(payload),
   });
